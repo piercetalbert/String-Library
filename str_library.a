@@ -1,0 +1,121 @@
+strcpy:
+		# strcpy(dest, src) copies src into dest and returns dest.
+		# dest = $a0, src = $a1, return $a0 in $v0.
+
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		move $v0, $a0 				# Do this now so we don't have to save $a0
+strcpy_next:
+		lb $t0, 0($a1)				# Load a byte
+		sb $t0, 0($a0)				# Save a byte
+		addi $a0, $a0, 1			# Increment dest
+		addi $a1, $a1, 1			# Increment src
+		bne $t0, $zero, strcpy_next # Done?
+
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+		
+strlen:
+    		move $t0, $zero			# initialize count 
+    		j strlen_next
+strlen_loop:
+    		addi $a0, $a0, 1 			# load increment string pointer
+    		addi $t0, $t0, 1 			# increment
+strlen_next:
+    		lb $t1, 0($a0) 				# load next character
+    		bnez $t1, strlen_loop 			
+    		move $v0, $t0
+    		jr $ra
+
+memset:		
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		move $v0, $a0
+
+memset_next:	
+		sb $a1, 0($a0)
+		addi $t1, $t1, 1			
+		addi $a0, $a0, 1			
+		bne $t1, $a2, memset_next
+
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+
+strchr:		
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		move $v0, $a0 				# Do this now so we don't have to save $a0
+strchr_next:	
+		lb $t0, 0($a0)
+		addi $a0, $a0, 1				# Load a byte
+		beq $t0, $a1, strchr_found			# Increment dest
+		bne $t0, $zero, strchr_next
+strchr_else:
+		li $v0, 0
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+
+strchr_found:
+		la $v0, -1($a0)
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+
+strcat:		
+		addi $sp, $sp, -12    			# set aside 12 bytes of stack space
+    		sw $fp, 0($sp)        			# frame pointer
+    		move $fp, $sp        			# set frame pointer to stack pointer
+    		sw $ra, 4($fp)       			# save return value
+    		sw $a0, 8($fp)        			# save first argument
+    		jal strlen
+    		
+    		lw $a0, 8($fp)        			# dest address
+    		add $a0, $a0, $v0     			# add the length of dest to the dest pointer
+    		jal strcpy            			# call strcpy to copy the string to the end of the original string
+    		
+    		lw $v0, 8($fp)        			# fetch original dest address as return value
+    		lw $ra, 4($fp) 
+    		lw $fp, 0($sp)
+    		addi $sp, $sp, 12    
+    		jr $ra
+
+strcmp:		
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		move $v0, $a0
+		
+		addi $sp, $sp, -4
+		sw $ra, 0($sp)
+		move $v0, $a1 
+strcmp_next:
+		lb $t0, 0($a1)				# Load a byte
+		lb $t1, 0($a0)
+		addi $a0, $a0, 1			# Increment dest
+		addi $a1, $a1, 1			# Increment src
+		bgt $t0, $t1, strcmp_gt
+		blt $t0, $t1, strcmp_lt
+		bne $t0, $zero, strcmp_next
+		
+strcmp_else:
+		li $v0, 0
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+
+strcmp_gt:
+		li $v0, -1
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+		
+strcmp_lt:	
+		li $v0, 1
+		lw $ra, 0($sp)
+		addi $sp, $sp, 4
+		jr $ra
+		
+		
+		
